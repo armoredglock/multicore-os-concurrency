@@ -32,6 +32,10 @@ tsan: $(SRC_M1)/race_condition.c
 tsan-report:
 	python scripts/run_tsan.py
 
+# Target for Mutex Contention Latency Profiling
+mutex-profile:
+	python scripts/profile_mutex.py
+
 # Target for Disassembly and Interleaving Trace Analysis
 disasm:
 	python scripts/disassemble_race.py
@@ -39,4 +43,4 @@ disasm:
 clean:
 	rm -rf $(BIN_DIR) *.exe *.o
 
-.PHONY: all clean tsan tsan-report disasm
+.PHONY: all clean tsan tsan-report mutex-profile disasm

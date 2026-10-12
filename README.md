@@ -15,42 +15,6 @@ This repository contains an empirical evaluation of race conditions, hardware ca
 
 ---
 
-## System Architecture
-
-The following diagram illustrates the interaction between user-space thread concurrency, operating system synchronization primitives, and multicore hardware cache hierarchies:
-
-![System Architecture Overview](docs/images/architecture_overview.png)
-
-### Architectural Flowchart
-
-```
-+-----------------------------------------------------------------------------------+
-|               USER-SPACE THREAD CONCURRENCY (1 to 16 POSIX Threads)               |
-|  - Worker Threads: Unsynchronized shared counter increments (shared_counter++)   |
-|  - Failure Mode: 3-instruction load-add-store race condition in x86-64 assembly  |
-|  - Detection: ThreadSanitizer (-fsanitize=thread) runtime race interception       |
-+------------------------------------------+----------------------------------------+
-                                           | Critical Section Protection
-                                           v
-+-----------------------------------------------------------------------------------+
-|                     OS SYNCHRONIZATION PRIMITIVES EVALUATED                       |
-|  - POSIX Mutex: User-space CMPXCHG (~5ns) + sys_futex() kernel wait queue         |
-|  - POSIX Semaphore: Counting semaphore with full kernel sleep/wake transitions    |
-|  - Hardware Atomics: Bus-locked __sync_fetch_and_add()                            |
-|  - Cache Line Alignment: alignas(64) padding to eliminate false sharing           |
-+------------------------------------------+----------------------------------------+
-                                           | Memory Reads & Writes
-                                           v
-+-----------------------------------------------------------------------------------+
-|               MULTICORE HARDWARE & CACHE COHERENCE (MESI PROTOCOL)                |
-|  - Core 0 (L1/L2)  |  Core 1 (L1/L2)  |  Core 2 (L1/L2)  |  Core 3 (L1/L2)       |
-|  - High-Speed Interconnect: Invalidation traffic & cache-line bouncing            |
-|  - False Sharing: Independent variables on the same 64B line invalidate all cores |
-+-----------------------------------------------------------------------------------+
-```
-
----
-
 ## Project Structure
 
 ```
@@ -63,8 +27,6 @@ The following diagram illustrates the interaction between user-space thread conc
 │       └── ci.yml                                  # GitHub Actions CI/CD automation workflow
 ├── bin/                                            # Compiled executable binaries (git-ignored)
 ├── docs/
-│   ├── images/
-│   │   └── architecture_overview.png               # High-resolution architectural diagram
 │   ├── Review1_Summary.md                          # Review 1 concepts, architecture & viva Q&As
 │   └── Review2_Official_Task_Allocation.md         # Review 2 milestone split between team members
 ├── src/

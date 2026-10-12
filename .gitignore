@@ -1,0 +1,28 @@
+# Binaries and object files
+*.exe
+*.o
+*.out
+bin/
+build/
+
+# Compiler and debug symbols
+*.dSYM/
+*.pdb
+*.ilk
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Benchmark results / raw CSV dumps (keep generated plots)
+benchmarks/raw_data/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -29,6 +29,9 @@ $(BIN_DIR)/spinlock_atomic_sync: $(SRC_M2)/spinlock_atomic_sync.c
 tsan: $(SRC_M1)/race_condition.c
 	$(CC) $(TSAN_FLAGS) $< -o $(BIN_DIR)/race_tsan
 
+tsan-report:
+	python scripts/run_tsan.py
+
 # Target for Disassembly and Interleaving Trace Analysis
 disasm:
 	python scripts/disassemble_race.py
@@ -36,4 +39,4 @@ disasm:
 clean:
 	rm -rf $(BIN_DIR) *.exe *.o
 
-.PHONY: all clean tsan disasm
+.PHONY: all clean tsan tsan-report disasm

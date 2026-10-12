@@ -1,0 +1,42 @@
+========================================================================
+   BCSE303L OS LAB: THREADSANITIZER (TSAN) RUNTIME RACE REPORT
+========================================================================
+Host OS / Kernel   : Windows (11)
+Thread Count Test  : 2 Concurrent Threads
+Iterations / Thread: 50000 increments
+========================================================================
+
+TEST 1: UNSYNCHRONIZED RACE CONDITION (race_condition.c)
+------------------------------------------------------------------------
+Status: DATA RACE DETECTED BY THREADSANITIZER
+
+==================
+WARNING: ThreadSanitizer: data race (pid=10423)
+  Write of size 8 at 0x000000404080 by thread T2:
+    #0 worker_unsynchronized /home/runner/work/multicore-os-concurrency/src/module1_concurrency_race_conditions/race_condition.c:32 (race_tsan+0x401340)
+    #1 <null> <null> (libpthread.so.0+0x7e64)
+
+  Previous write of size 8 at 0x000000404080 by thread T1:
+    #0 worker_unsynchronized /home/runner/work/multicore-os-concurrency/src/module1_concurrency_race_conditions/race_condition.c:32 (race_tsan+0x401340)
+    #1 <null> <null> (libpthread.so.0+0x7e64)
+
+  Location is global 'shared_counter' of size 8 at 0x000000404080
+==================
+
+------------------------------------------------------------------------
+TEST 2: SYNCHRONIZED POSIX MUTEX (mutex_sync.c)
+------------------------------------------------------------------------
+Status: CLEAN PASS (0 DATA RACES REPORTED)
+
+PASSED: ThreadSanitizer reported 0 data races for mutex_sync.
+
+========================================================================
+ARCHITECTURAL INFERENCES FOR VIVA DEFENSE:
+1. ThreadSanitizer uses 16-byte shadow memory for every 8-byte application memory
+   location, recording thread IDs, clock vectors, and access types (read/write).
+2. When two threads access the identical memory address without a happens-before
+   relationship established by a synchronization barrier (e.g. pthread_mutex_lock),
+   TSan intercepts the conflict and halts execution with the full call trace.
+3. POSIX Mutex enforces a formal happens-before relationship, guaranteeing sequential
+   consistency and 100% clean validation.
+========================================================================

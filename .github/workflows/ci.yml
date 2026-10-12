@@ -1,0 +1,63 @@
+name: Multicore Concurrency CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install matplotlib
+
+      - name: Compile all C synchronization targets
+        run: |
+          make clean
+          make
+
+      - name: Run Unsynchronized Race Condition Testbed
+        run: |
+          ./bin/race_condition 4 1000000
+
+      - name: Run POSIX Mutex Verification
+        run: |
+          ./bin/mutex_sync 4 1000000
+
+      - name: Run POSIX Counting Semaphore Verification
+        run: |
+          ./bin/semaphore_sync 4 100000
+
+      - name: Run Hardware Atomics & False Sharing Profiling
+        run: |
+          ./bin/spinlock_atomic_sync 4 1000000
+
+      - name: Compile and Run ThreadSanitizer (TSan) Diagnostic
+        run: |
+          make tsan
+          # TSan exits with non-zero when data race is caught; verify detection
+          ./bin/race_tsan 2 50000 || true
+
+      - name: Run Automated Thread Scalability Benchmark Suite
+        run: |
+          python3 benchmarks/benchmark_runner.py
+
+      - name: Upload Benchmark Results and Plots
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmarks/results/

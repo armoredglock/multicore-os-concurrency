@@ -1,5 +1,7 @@
 # Multicore OS Concurrency and Synchronization Benchmarks
 
+[![Multicore Concurrency CI/CD](https://github.com/armoredglock/multicore-os-concurrency/actions/workflows/ci.yml/badge.svg)](https://github.com/armoredglock/multicore-os-concurrency/actions/workflows/ci.yml)
+
 Course project for **BCSE303L - Operating Systems Laboratory**, Vellore Institute of Technology (VIT).
 
 This repository contains an empirical evaluation of race conditions, hardware cache coherence overheads (MESI protocol), and synchronization primitives (POSIX Mutexes, POSIX Counting Semaphores, hardware atomics, and cache-line alignment) across multicore architectures.
@@ -13,6 +15,42 @@ This repository contains an empirical evaluation of race conditions, hardware ca
 
 ---
 
+## System Architecture
+
+The following diagram illustrates the interaction between user-space thread concurrency, operating system synchronization primitives, and multicore hardware cache hierarchies:
+
+![System Architecture Overview](docs/images/architecture_overview.png)
+
+### Architectural Flowchart
+
+```
++-----------------------------------------------------------------------------------+
+|               USER-SPACE THREAD CONCURRENCY (1 to 16 POSIX Threads)               |
+|  - Worker Threads: Unsynchronized shared counter increments (shared_counter++)   |
+|  - Failure Mode: 3-instruction load-add-store race condition in x86-64 assembly  |
+|  - Detection: ThreadSanitizer (-fsanitize=thread) runtime race interception       |
++------------------------------------------+----------------------------------------+
+                                           | Critical Section Protection
+                                           v
++-----------------------------------------------------------------------------------+
+|                     OS SYNCHRONIZATION PRIMITIVES EVALUATED                       |
+|  - POSIX Mutex: User-space CMPXCHG (~5ns) + sys_futex() kernel wait queue         |
+|  - POSIX Semaphore: Counting semaphore with full kernel sleep/wake transitions    |
+|  - Hardware Atomics: Bus-locked __sync_fetch_and_add()                            |
+|  - Cache Line Alignment: alignas(64) padding to eliminate false sharing           |
++------------------------------------------+----------------------------------------+
+                                           | Memory Reads & Writes
+                                           v
++-----------------------------------------------------------------------------------+
+|               MULTICORE HARDWARE & CACHE COHERENCE (MESI PROTOCOL)                |
+|  - Core 0 (L1/L2)  |  Core 1 (L1/L2)  |  Core 2 (L1/L2)  |  Core 3 (L1/L2)       |
+|  - High-Speed Interconnect: Invalidation traffic & cache-line bouncing            |
+|  - False Sharing: Independent variables on the same 64B line invalidate all cores |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -20,8 +58,13 @@ This repository contains an empirical evaluation of race conditions, hardware ca
 ├── Makefile
 ├── .gitignore
 ├── README.md
+├── .github/
+│   └── workflows/
+│       └── ci.yml                                  # GitHub Actions CI/CD automation workflow
 ├── bin/                                            # Compiled executable binaries (git-ignored)
 ├── docs/
+│   ├── images/
+│   │   └── architecture_overview.png               # High-resolution architectural diagram
 │   ├── Review1_Summary.md                          # Review 1 concepts, architecture & viva Q&As
 │   └── Review2_Official_Task_Allocation.md         # Review 2 milestone split between team members
 ├── src/
@@ -176,6 +219,18 @@ ThreadSanitizer intercepts uncoordinated memory accesses at runtime and outputs 
 
 ---
 
-## References & Literature
+## Continuous Integration (CI/CD)
 
-This project is backed by 30 peer-reviewed research papers (2022–2026) covering lock contention, Linux CFS runqueues, eBPF mutex profiling, and deadlock avoidance. See [`docs/Review1_Summary.md`](docs/Review1_Summary.md) for the complete literature review and viva examination guide.
+The repository features an automated GitHub Actions workflow (`.github/workflows/ci.yml`) that triggers on every push and pull request to `main`. It automatically:
+1. Compiles all C testbeds with `-Wall -Wextra` to ensure zero compilation warnings.
+2. Runs the synchronization testbeds and verifies mathematical consistency.
+3. Tests data-race interception via ThreadSanitizer.
+4. Executes the Python benchmark suite and archives timing plots as build artifacts.
+
+---
+
+## References & Review Documentation
+
+* **Review 1 Report & Viva Defense Guide:** [`docs/Review1_Summary.md`](docs/Review1_Summary.md)
+* **Review 2 Milestone & Task Breakdown:** [`docs/Review2_Official_Task_Allocation.md`](docs/Review2_Official_Task_Allocation.md)
+* **GitHub Issues for Review 2:** View open tasks directly in the [Issues tab](https://github.com/armoredglock/multicore-os-concurrency/issues).

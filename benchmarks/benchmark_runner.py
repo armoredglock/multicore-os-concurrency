@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """
 benchmark_runner.py
-Automated Benchmark & Timing Graph Generator for OS Review 2.
-
-Sweeps thread counts across 1, 2, 4, 8, 16 threads for:
-- Unsynchronized Race Condition
-- POSIX Mutex
-- POSIX Semaphore
-- Hardware Atomic Fetch-and-Add
-
-Author: Swati Saumya (24BCI0253) & Sagnik Datta (24BCT0102)
-Course: BCSE303L - Operating Systems Laboratory
+Automated Benchmark & Unified Multi-Panel Graph Generator for OS Review 2.
 """
 
 import os
@@ -26,9 +17,7 @@ RESULTS_DIR = os.path.join(PROJECT_ROOT, "benchmarks", "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 THREAD_COUNTS = [1, 2, 4, 8, 16]
-ITERATIONS_RACE = 1000000
 ITERATIONS_MUTEX = 500000
-ITERATIONS_SEM = 100000
 ITERATIONS_ATOMIC = 2000000
 
 def run_cmd(executable, threads, iters):
@@ -42,7 +31,7 @@ def run_cmd(executable, threads, iters):
         time_match = re.search(r"Elapsed Time\s*:\s*([\d\.]+)\s*ms", out)
         if time_match:
             return float(time_match.group(1))
-        # For atomic program format:
+        
         atomic_match = re.search(r"1\.\s*Hardware Atomic.*?:\s*([\d\.]+)\s*ms", out)
         if atomic_match:
             return float(atomic_match.group(1))
@@ -51,7 +40,7 @@ def run_cmd(executable, threads, iters):
     return 0.0
 
 def run_all_benchmarks():
-    print("Starting Multicore Synchronization Sweep across threads: [1, 2, 4, 8, 16]...")
+    print("Starting Unified Multi-Panel Benchmark Sweep...")
     
     mutex_times = []
     atomic_times = []
@@ -62,28 +51,39 @@ def run_all_benchmarks():
         t_atomic = run_cmd("spinlock_atomic_sync", t, ITERATIONS_ATOMIC)
         mutex_times.append(t_mutex)
         atomic_times.append(t_atomic)
-        print(f"    Mutex Time: {t_mutex:.2f} ms | Atomic Time: {t_atomic:.2f} ms")
+        print(f"    Mutex: {t_mutex:.2f} ms | Atomic: {t_atomic:.2f} ms")
 
-    # Plotting Timing Comparison
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=300)
-    ax.set_facecolor('#F8FAFC')
-    fig.patch.set_facecolor('#FFFFFF')
+    # Issue #6: Unified Multi-panel Plotting (1 Row, 2 Columns)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), dpi=300)
+    fig.suptitle("Module 2: Unified Multicore Concurrency Benchmarks", fontsize=16, fontweight='bold', color='#0F172A')
 
-    ax.plot(THREAD_COUNTS, mutex_times, marker='o', linewidth=2.2, color='#1E40AF', label='POSIX Mutex (pthread_mutex)')
-    ax.plot(THREAD_COUNTS, atomic_times, marker='s', linewidth=2.2, color='#0D9488', label='Hardware Atomic (Bus Lock)')
+    # Panel 1: Execution Time vs Thread Count (Line Graph)
+    ax1.plot(THREAD_COUNTS, mutex_times, marker='o', linewidth=2.2, color='#1E40AF', label='POSIX Mutex')
+    ax1.plot(THREAD_COUNTS, atomic_times, marker='s', linewidth=2.2, color='#0D9488', label='Hardware Atomic')
+    ax1.set_title("Scaling: Time vs Threads", pad=12)
+    ax1.set_xlabel("Number of Concurrent Threads")
+    ax1.set_ylabel("Execution Time (ms)")
+    ax1.set_xticks(THREAD_COUNTS)
+    ax1.grid(True, linestyle='--', alpha=0.6)
+    ax1.legend()
 
-    ax.set_title("Synchronization Execution Time vs. Thread Count (1 to 16 Threads)", fontsize=12, fontweight='bold', color='#0F172A', pad=12)
-    ax.set_xlabel("Number of Concurrent Threads", fontsize=10, fontweight='bold', color='#334155')
-    ax.set_ylabel("Wall-Clock Execution Time (ms)", fontsize=10, fontweight='bold', color='#334155')
-    ax.set_xticks(THREAD_COUNTS)
-    ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(frameon=True, facecolor='#FFFFFF')
+    # Panel 2: Average Performance Comparison (Bar Chart)
+    avg_mutex = sum(mutex_times) / len(mutex_times) if mutex_times else 0
+    avg_atomic = sum(atomic_times) / len(atomic_times) if atomic_times else 0
+    
+    ax2.bar(['POSIX Mutex', 'Hardware Atomic'], [avg_mutex, avg_atomic], color=['#1E40AF', '#0D9488'], width=0.5)
+    ax2.set_title("Average Execution Time Across All Threads", pad=12)
+    ax2.set_ylabel("Average Time (ms)")
+    ax2.grid(axis='y', linestyle='--', alpha=0.6)
+    ax2.text(0, avg_mutex + (avg_mutex*0.02), f"{avg_mutex:.2f}", ha='center', fontweight='bold')
+    ax2.text(1, avg_atomic + (avg_atomic*0.02), f"{avg_atomic:.2f}", ha='center', fontweight='bold')
 
-    plot_path = os.path.join(RESULTS_DIR, "execution_time_comparison.png")
+    # Save final suite
+    plot_path = os.path.join(RESULTS_DIR, "unified_benchmark_suite.png")
     plt.tight_layout()
     plt.savefig(plot_path)
     plt.close()
-    print(f"Timing graph saved to: {plot_path}")
+    print(f"\nSuccess! Multi-panel suite saved to: {plot_path}")
 
 if __name__ == "__main__":
     run_all_benchmarks()
